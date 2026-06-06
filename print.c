@@ -1,4 +1,5 @@
 #include "print.h"
+#include "stringprint.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <gc.h>

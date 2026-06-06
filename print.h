@@ -12,13 +12,10 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <gc.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/param.h>
 
 #ifndef PRINT_COLOR
 #define PRINT_COLOR 0
@@ -164,45 +161,9 @@ PRINT_FN _print_num_format(FILE *f, num_format_t num) {
     quoted_t: _print_quoted, \
     void*: _print_pointer)(f, x)
 
-typedef struct {
-    char **buffer;
-    size_t *size;
-    size_t position;
-} gc_stream_t;
-
-static ssize_t _gc_stream_write(void *cookie, const char *buf, size_t size) {
-    gc_stream_t *stream = (gc_stream_t *)cookie;
-    if (stream->position + size + 1 > *stream->size)
-        *stream->buffer = GC_REALLOC(*stream->buffer, (*stream->size += MAX(MAX(16, *stream->size/2), size + 1)));
-    memcpy(&(*stream->buffer)[stream->position], buf, size);
-    stream->position += size;
-    (*stream->buffer)[stream->position] = '\0';
-    return size;
-}
-
-static FILE *gc_memory_stream(char **buf, size_t *size) {
-    gc_stream_t *stream = GC_MALLOC(sizeof(gc_stream_t));
-    stream->size = size;
-    stream->buffer = buf;
-    *stream->size = 16;
-    *stream->buffer = GC_MALLOC_ATOMIC(*stream->size);
-    (*stream->buffer)[0] = '\0';
-    stream->position = 0;
-    cookie_io_functions_t functions = {.write = _gc_stream_write};
-    return fopencookie(stream, "w", functions);
-}
-
 #define _print(x) _n += _fprint1(_printing, x)
 #define _fprint(f, ...) ({ FILE *_printing = f; int _n = 0; MAP_LIST(_print, __VA_ARGS__); _n; })
 #define fprint(f, ...) _fprint(f, __VA_ARGS__, "\n")
 #define print(...) fprint(stdout, __VA_ARGS__)
 #define fprint_inline(f, ...) _fprint(f, __VA_ARGS__)
 #define print_inline(...) fprint_inline(stdout, __VA_ARGS__)
-#define String(...) ({ \
-    char *_buf = NULL; \
-    size_t _size = 0; \
-    FILE *_stream = gc_memory_stream(&_buf, &_size); \
-    assert(_stream); \
-    _fprint(_stream, __VA_ARGS__); \
-    fflush(_stream); \
-    _buf; })
