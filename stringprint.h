@@ -1,3 +1,5 @@
+#pragma once
+
 // This file defines a String(...) macro that works with the Boehm GC
 // to allocate formatted strings.
 #include <gc.h>
