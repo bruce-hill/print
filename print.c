@@ -1,5 +1,5 @@
 #include "print.h"
-#include "stringprint.h"
+#include "gcprint.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <gc.h>
